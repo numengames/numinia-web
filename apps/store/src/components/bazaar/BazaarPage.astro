@@ -12,6 +12,10 @@ import { communityShelves } from '../../lib/goods';
 import { AHORA_UI } from '../../i18n/ahora';
 import { COMMUNITIES } from '../communities/register';
 import { Bazaar } from './Bazaar';
+import MovementsSection from './MovementsSection.astro';
+import { MOVEMENTS_MESSAGES } from '../../i18n/movements';
+import { MOVEMENTS } from '../../lib/movements';
+import { fill } from '../../lib/bazaar-view';
 
 interface Props {
   locale: SupportedLocale;
@@ -20,6 +24,7 @@ interface Props {
 const { locale } = Astro.props;
 const t = BAZAAR_MESSAGES[locale];
 const a = AHORA_UI[locale];
+const m = MOVEMENTS_MESSAGES[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
 const items = await loadBazaarItems(locale);
 // «El de cada comunidad, si ha subido algo»: only the communities with goods, never a «· 0».
@@ -30,6 +35,11 @@ const shelves = communityShelves(COMMUNITIES, items.length);
   <header class="bazaar-cabeza">
     <h1>{t.title}</h1>
     <p>{t.lead}</p>
+    <p class="a-movimientos">
+      <a class="estante" href="#movimientos" data-metric="bazaar-movements-jump">
+        {fill(m.jump, { n: MOVEMENTS.length })}
+      </a>
+    </p>
   </header>
   {
     shelves.length > 0 && (
@@ -58,6 +68,7 @@ const shelves = communityShelves(COMMUNITIES, items.length);
     viewerLabels={VIEWER_MESSAGES[locale]}
     locale={locale}
   />
+  <MovementsSection locale={locale} />
 </BaseLayout>
 
 <style>
@@ -66,6 +77,9 @@ const shelves = communityShelves(COMMUNITIES, items.length);
   }
   .bazaar-cabeza h1 {
     margin: 0 0 var(--s2);
+  }
+  .bazaar-cabeza .a-movimientos {
+    margin-top: var(--s3);
   }
   .bazaar-cabeza p {
     max-width: 62ch;

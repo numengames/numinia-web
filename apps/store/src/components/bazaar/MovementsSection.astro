@@ -1,0 +1,133 @@
+---
+/**
+ * The Bazar's seventh section, «Movimientos» (first cut): the movements a
+ * CC0 clip already covers, each with its dictionary id, its name, the
+ * library and the clips it comes from, and its licence. Server-rendered,
+ * no island and no controls: nothing downloads yet, and the section says so
+ * once instead of showing a button that does nothing.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { MOVEMENTS_MESSAGES } from '../../i18n/movements';
+import { MOVEMENTS, MOVEMENTS_LICENSE, libraryName } from '../../lib/movements';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = MOVEMENTS_MESSAGES[locale];
+---
+
+<section class="movimientos" id="movimientos" aria-labelledby="movimientos-titulo" data-movements>
+  <header>
+    <h2 id="movimientos-titulo">{t.title}</h2>
+    <p>{t.lead}</p>
+    <p class="sin-descarga">{t.noDownload}</p>
+  </header>
+  <ul class="movimientos-lista">
+    {
+      MOVEMENTS.map((movement) => (
+        <li class="movimiento" data-movement-id={movement.id}>
+          <div class="cabeza">
+            <span class="codigo">{movement.id}</span>
+            <span class="licencia" title={MOVEMENTS_LICENSE}>CC0</span>
+          </div>
+          <h3>{t.names[movement.id]}</h3>
+          <dl>
+            <dt>{t.fromLabel}</dt>
+            <dd>{libraryName(movement.library)}</dd>
+            <dt>{movement.library === 'makehuman' ? t.posesLabel : t.clipsLabel}</dt>
+            <dd class="clips">{movement.clips.join(' · ')}</dd>
+          </dl>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .movimientos {
+    margin-top: var(--s7);
+    padding-top: var(--s5);
+    border-top: 1px solid var(--linea);
+    scroll-margin-top: 88px;
+  }
+  .movimientos header {
+    margin-bottom: var(--s4);
+  }
+  .movimientos h2 {
+    margin: 0 0 var(--s2);
+  }
+  .movimientos header p {
+    max-width: 62ch;
+    margin: 0;
+    color: var(--texto-2);
+  }
+  .movimientos header .sin-descarga {
+    margin-top: var(--s2);
+    font-size: 0.875rem;
+  }
+  .movimientos-lista {
+    display: grid;
+    gap: var(--s3);
+    grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .movimiento {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+    min-width: 0;
+    padding: var(--s3);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-marco);
+    background: var(--superficie);
+  }
+  .movimiento .cabeza {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s2);
+  }
+  .movimiento .codigo,
+  .movimiento .licencia {
+    font: 500 0.68rem var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .movimiento .codigo {
+    color: var(--texto);
+  }
+  .movimiento .licencia {
+    padding: 2px 8px;
+    border: 1px solid color-mix(in srgb, var(--verdemar) 45%, transparent);
+    border-radius: 999px;
+    color: var(--verdemar);
+  }
+  .movimiento h3 {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+  .movimiento dl {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 2px var(--s2);
+    margin: auto 0 0;
+    font-size: 0.8rem;
+  }
+  .movimiento dt {
+    color: var(--texto-2);
+  }
+  .movimiento dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  .movimiento .clips {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+  }
+</style>
