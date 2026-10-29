@@ -21,7 +21,7 @@ const TOKEN = `ntk_${'Tq9'.repeat(14)}x`;
 const ASK = { req: REQ, app: 'Claude', host: 'claude.ai' };
 const CONNECTION = {
   req: REQ,
-  accountId: 'acc_team_numen_games',
+  accountId: 'acc_t_2e2dd18c880ba974da1512dc7cde2431',
   agentId: 'claude-de-ana',
   via: 'mcp:claude.ai',
   hear: false,

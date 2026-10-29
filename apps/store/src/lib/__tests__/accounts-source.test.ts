@@ -809,7 +809,7 @@ describe('POST /api/saldo: roles', () => {
 
   it('works end to end against the fixture desk', async () => {
     const desk = fixtureAccounts();
-    const team = 'acc_team_numen_games';
+    const team = 'acc_t_2e2dd18c880ba974da1512dc7cde2431';
     const made = (await (
       await answerAction(
         desk,

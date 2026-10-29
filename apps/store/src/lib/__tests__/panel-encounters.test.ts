@@ -26,7 +26,7 @@ function ritual(id: string, of: string, start: string, extra: Record<string, unk
 
 describe('the build-time map of each organization’s next encounters', () => {
   const communities = [
-    community('numen-games', { team: 'acc_team_numen_games' }),
+    community('numen-games', { team: 'acc_t_2e2dd18c880ba974da1512dc7cde2431' }),
     community('sin-equipo'),
     community('casa', { team: 'acc_team_casa', visibility: 'house' }),
     community('callada', { team: 'acc_team_callada' }),
@@ -45,7 +45,7 @@ describe('the build-time map of each organization’s next encounters', () => {
 
   it('lists, per organization named in a published community, its upcoming encounters, nearest first', () => {
     expect(encounterMap(communities, rituals, 'es', href, NOW)).toEqual({
-      acc_team_numen_games: [
+      acc_t_2e2dd18c880ba974da1512dc7cde2431: [
         {
           title: 'Encuentro a',
           href: '/es/rituals/a/',
@@ -72,7 +72,7 @@ describe('the build-time map of each organization’s next encounters', () => {
   it('titles them in the page’s language and keeps as many as asked', () => {
     const english = encounterMap(communities, rituals, 'en', (id) => `/rituals/${id}/`, NOW, 1);
     expect(english).toEqual({
-      acc_team_numen_games: [
+      acc_t_2e2dd18c880ba974da1512dc7cde2431: [
         {
           title: 'Encuentro a (en)',
           href: '/rituals/a/',
@@ -86,9 +86,9 @@ describe('the build-time map of each organization’s next encounters', () => {
   it('leaves out an encounter already over when the site is built, whatever its file says', () => {
     const later = new Date('2026-11-04T00:00:00.000Z');
     expect(
-      encounterMap(communities, rituals, 'es', href, later)['acc_team_numen_games']?.map(
-        (entry) => entry.href,
-      ),
+      encounterMap(communities, rituals, 'es', href, later)[
+        'acc_t_2e2dd18c880ba974da1512dc7cde2431'
+      ]?.map((entry) => entry.href),
     ).toEqual(['/es/rituals/b/', '/es/rituals/c/', '/es/rituals/d/']);
     expect(
       encounterMap(communities, rituals, 'es', href, new Date('2027-03-01T00:00:00.000Z')),
@@ -98,7 +98,7 @@ describe('the build-time map of each organization’s next encounters', () => {
 
 describe('the build-time lists of the panel’s «Encuentros», per organization', () => {
   const communities = [
-    community('numen-games', { team: 'acc_team_numen_games' }),
+    community('numen-games', { team: 'acc_t_2e2dd18c880ba974da1512dc7cde2431' }),
     community('sin-equipo'),
     community('casa', { team: 'acc_team_casa', visibility: 'house' }),
   ];
@@ -119,11 +119,11 @@ describe('the build-time lists of the panel’s «Encuentros», per organization
   it('gives every account of a published community its upcoming (nearest first) and held (latest first) encounters', () => {
     const map = gatheringsMap(communities, rituals, 'es', hrefs, accountsOf);
     expect(Object.keys(map).sort()).toEqual([
+      'acc_t_2e2dd18c880ba974da1512dc7cde2431',
       'acc_t_numen-games',
       'acc_t_sin-equipo',
-      'acc_team_numen_games',
     ]);
-    const house = map['acc_team_numen_games'];
+    const house = map['acc_t_2e2dd18c880ba974da1512dc7cde2431'];
     expect(house).toEqual(map['acc_t_numen-games']);
     expect(house?.community).toEqual({
       id: 'numen-games',
@@ -169,7 +169,9 @@ describe('the build-time lists of the panel’s «Encuentros», per organization
 
   it('speaks the page’s language', () => {
     const map = gatheringsMap(communities, rituals, 'en', hrefs, accountsOf);
-    expect(map['acc_team_numen_games']?.upcoming[0]?.title).toBe('Encuentro a (en)');
-    expect(map['acc_team_numen_games']?.upcoming[0]?.where).toBe('En línea (en)');
+    expect(map['acc_t_2e2dd18c880ba974da1512dc7cde2431']?.upcoming[0]?.title).toBe(
+      'Encuentro a (en)',
+    );
+    expect(map['acc_t_2e2dd18c880ba974da1512dc7cde2431']?.upcoming[0]?.where).toBe('En línea (en)');
   });
 });

@@ -23,7 +23,7 @@ const PERSONAL = {
   balanceCents: 420,
 };
 const GAMES = {
-  id: 'acc_team_numen_games',
+  id: 'acc_t_2e2dd18c880ba974da1512dc7cde2431',
   kind: 'team',
   name: 'Numen Games',
   role: 'member',
@@ -41,7 +41,7 @@ const HOUSE = { ...RESET, id: 'acc_team_other', name: 'Otra', as: 'house' };
 describe('readMyTeams', () => {
   it('keeps the teams the wallet is in, by id and name; the house entries and the personal account out', () => {
     expect(readMyTeams({ accounts: [PERSONAL, GAMES, HOUSE, { ...RESET, name: '' }] })).toEqual([
-      { id: 'acc_team_numen_games', name: 'Numen Games' },
+      { id: 'acc_t_2e2dd18c880ba974da1512dc7cde2431', name: 'Numen Games' },
       { id: 'acc_team_reset', name: 'acc_team_reset' },
     ]);
     expect(readMyTeams({ accounts: [PERSONAL] })).toEqual([]);
@@ -101,7 +101,7 @@ const deskWith = (
   }) as unknown as AccountDesk;
 
 const WORLDS: Record<string, string[]> = {
-  acc_team_numen_games: ['atlantis-library', 'agora-plaza'],
+  acc_t_2e2dd18c880ba974da1512dc7cde2431: ['atlantis-library', 'agora-plaza'],
   acc_team_reset: [],
 };
 
@@ -118,14 +118,14 @@ describe('myWorlds', () => {
     );
     expect(asked).toEqual([
       'overview:0xabc',
-      'worldsOf:0xabc:false:acc_team_numen_games',
+      'worldsOf:0xabc:false:acc_t_2e2dd18c880ba974da1512dc7cde2431',
       'worldsOf:0xabc:false:acc_team_reset',
     ]);
     expect(mine).toEqual({
       count: 2,
       communities: [
         {
-          accountId: 'acc_team_numen_games',
+          accountId: 'acc_t_2e2dd18c880ba974da1512dc7cde2431',
           name: 'Numen Games',
           worldIds: ['agora-plaza', 'atlantis-library'],
         },
@@ -197,7 +197,7 @@ describe('answerMyWorlds', () => {
     expect(await response.json()).toEqual({
       ok: true,
       count: 1,
-      communities: [{ accountId: 'acc_team_numen_games', name: 'Numen Games', worldIds: ['a'] }],
+      communities: [{ accountId: 'acc_t_2e2dd18c880ba974da1512dc7cde2431', name: 'Numen Games', worldIds: ['a'] }],
     });
   });
 });

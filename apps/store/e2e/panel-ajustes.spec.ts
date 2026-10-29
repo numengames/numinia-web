@@ -27,7 +27,7 @@ const OWNER = `0x${'cd'.repeat(20)}`;
 const BUSY = `0x${'ee'.repeat(20)}`;
 const FRESH = `0x${'11'.repeat(20)}`;
 const MEMBER = '0x00000000000000000000000000000000000000d4';
-const NUMEN = 'acc_team_numen_games';
+const NUMEN = 'acc_t_2e2dd18c880ba974da1512dc7cde2431';
 const INSTITUTE = 'acc_team_active_inference';
 
 let server: ChildProcess | undefined;

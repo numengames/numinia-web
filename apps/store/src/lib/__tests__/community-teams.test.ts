@@ -26,7 +26,7 @@ const HOUSE: Asker = {
 const ADMIN: Asker = { wallet: `0x${'ab'.repeat(20)}`, house: false };
 
 const register = [
-  { id: 'numen-games', name: 'Numen Games', team: 'acc_team_numen_games' },
+  { id: 'numen-games', name: 'Numen Games', team: 'acc_t_2e2dd18c880ba974da1512dc7cde2431' },
   { id: 'reset', name: 'Reset', team: undefined },
 ] as unknown as readonly Community[];
 
@@ -126,7 +126,7 @@ describe('GET /api/admin/communities', () => {
         {
           id: 'numen-games',
           name: 'Numen Games',
-          team: 'acc_team_numen_games',
+          team: 'acc_t_2e2dd18c880ba974da1512dc7cde2431',
           account: await communityAccountId('numen-games'),
         },
         { id: 'reset', name: 'Reset', team: null, account: await communityAccountId('reset') },

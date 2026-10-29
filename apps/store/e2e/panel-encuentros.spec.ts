@@ -24,7 +24,7 @@ const derived = (communityId: string) =>
   `acc_t_${createHash('sha256').update(`numinia-till community ${communityId}`).digest('hex').slice(0, 32)}`;
 
 const GAMES = {
-  id: 'acc_team_numen_games',
+  id: 'acc_t_2e2dd18c880ba974da1512dc7cde2431',
   kind: 'team',
   name: 'Numen Games',
   role: 'owner',

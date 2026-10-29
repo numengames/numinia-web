@@ -17,7 +17,7 @@ import { loadTerms, publishTerms } from '../panel-terms-client';
 const NOW = new Date('2026-10-20T12:00:00.000Z');
 const ME = `0x${'ab'.repeat(20)}`;
 const seed = deskSeed as unknown as AccountsSeed;
-const NUMEN = 'acc_team_numen_games';
+const NUMEN = 'acc_t_2e2dd18c880ba974da1512dc7cde2431';
 const INSTITUTE = 'acc_team_active_inference';
 const INSTITUTE_ADMIN = `0x${'0'.repeat(38)}c3`;
 const TARUGO = 'acc_team_la_tarugo';

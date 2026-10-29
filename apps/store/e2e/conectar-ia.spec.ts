@@ -165,7 +165,7 @@ async function stepsState(page: Page): Promise<string[]> {
 async function leaveTheCommunity(page: Page, context: BrowserContext): Promise<void> {
   await signIn(context, LONE);
   const left = await page.request.post(`${origin}/api/saldo`, {
-    data: { action: 'remove-member', accountId: 'acc_team_numen_games', wallet: LONE },
+    data: { action: 'remove-member', accountId: 'acc_t_2e2dd18c880ba974da1512dc7cde2431', wallet: LONE },
     headers: { origin },
   });
   expect(left.status()).toBe(200);
@@ -288,7 +288,7 @@ test.describe('the POST', () => {
     req: REQ,
     app: 'Claude',
     host: 'localhost',
-    accountId: 'acc_team_numen_games',
+    accountId: 'acc_t_2e2dd18c880ba974da1512dc7cde2431',
     ai: { kind: 'new', name: 'Claude de Ana' },
     roleId: null,
   };

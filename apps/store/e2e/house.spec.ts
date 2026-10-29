@@ -27,7 +27,7 @@ import { LEGAL_CORPUS_VERSION } from '../src/lib/legal';
 
 const ORACLE = `0x${'ab'.repeat(20)}`;
 const CITIZEN = `0x${'cd'.repeat(20)}`;
-const NUMEN = 'acc_team_numen_games';
+const NUMEN = 'acc_t_2e2dd18c880ba974da1512dc7cde2431';
 const INSTITUTE = 'acc_team_active_inference';
 const TARUGO = 'acc_team_la_tarugo';
 

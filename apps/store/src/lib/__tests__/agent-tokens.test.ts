@@ -22,7 +22,7 @@ import { b64urlEncode, publicKeyDocument, verifyPass } from '../world-pass';
 const NOW_MS = Date.parse('2026-10-17T10:00:00.000Z');
 const NOW = Math.floor(NOW_MS / 1000);
 const ME = `0x${'ab'.repeat(20)}`;
-const NUMEN = 'acc_team_numen_games';
+const NUMEN = 'acc_t_2e2dd18c880ba974da1512dc7cde2431';
 const SECRET = 'secret-of-the-session-'.repeat(2);
 const MEMBER_ROLE = `role_${(3).toString(16).padStart(16, '0')}`;
 const seed = deskSeed as unknown as AccountsSeed;

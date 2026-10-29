@@ -18,7 +18,7 @@ import { b64urlEncode } from '../world-pass';
 const NOW = new Date('2026-10-17T10:00:00.000Z');
 const ME = `0x${'ab'.repeat(20)}`;
 const HOUSE = `0x${'99'.repeat(20)}`;
-const NUMEN = 'acc_team_numen_games';
+const NUMEN = 'acc_t_2e2dd18c880ba974da1512dc7cde2431';
 const INSTITUTE = 'acc_team_active_inference';
 const INSTITUTE_OWNER = '0x00000000000000000000000000000000000000c3';
 const INSTITUTE_PLAIN = '0x00000000000000000000000000000000000000d4';

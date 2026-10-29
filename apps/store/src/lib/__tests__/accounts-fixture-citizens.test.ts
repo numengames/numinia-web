@@ -19,7 +19,7 @@ const LUCIA = '0x00000000000000000000000000000000000000a1';
 const MARCO = '0x00000000000000000000000000000000000000b2';
 const NUEVA = '0x0000000000000000000000000000000000000a07';
 const ARLA = 'avatar-arla-mncdhz3l';
-const NUMEN = 'acc_team_numen_games';
+const NUMEN = 'acc_t_2e2dd18c880ba974da1512dc7cde2431';
 const BAD_WALLET = 'wallet must be a lowercase 0x address';
 const seed = deskSeed as unknown as AccountsSeed;
 

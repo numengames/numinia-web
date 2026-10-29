@@ -20,7 +20,7 @@ const ME = `0x${'ab'.repeat(20)}`;
 const AE = '0x00000000000000000000000000000000000000ae';
 const STRANGER = '0x00000000000000000000000000000000000000f9';
 const RESET = 'acc_team_reset';
-const NUMEN = 'acc_team_numen_games';
+const NUMEN = 'acc_t_2e2dd18c880ba974da1512dc7cde2431';
 const BAD_WALLET = 'wallet must be a lowercase 0x address';
 const seed = { ...deskSeed, homes: homesSeed.homes } as unknown as AccountsSeed;
 

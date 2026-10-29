@@ -3,8 +3,8 @@
   "homes": [
     { "worldId": "bosque", "accountId": "acc_team_reset", "placedDaysAgo": 3 },
     { "worldId": "old-plaza", "accountId": "acc_team_reset", "placedDaysAgo": 3 },
-    { "worldId": "agora-plaza", "accountId": "acc_team_numen_games", "placedDaysAgo": 5 },
-    { "worldId": "atlantis-library", "accountId": "acc_team_numen_games", "placedDaysAgo": 5 },
-    { "worldId": "alchemists-tower", "accountId": "acc_team_numen_games", "placedDaysAgo": 5 }
+    { "worldId": "agora-plaza", "accountId": "acc_t_2e2dd18c880ba974da1512dc7cde2431", "placedDaysAgo": 5 },
+    { "worldId": "atlantis-library", "accountId": "acc_t_2e2dd18c880ba974da1512dc7cde2431", "placedDaysAgo": 5 },
+    { "worldId": "alchemists-tower", "accountId": "acc_t_2e2dd18c880ba974da1512dc7cde2431", "placedDaysAgo": 5 }
   ]
 }

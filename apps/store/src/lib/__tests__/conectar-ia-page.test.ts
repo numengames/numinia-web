@@ -24,7 +24,7 @@ import {
 } from '../conectar-ia-page';
 import { fixtureRelay, vueltaHref, type Relay } from '../relay-handoff';
 
-const ORG = 'acc_team_numen_games';
+const ORG = 'acc_t_2e2dd18c880ba974da1512dc7cde2431';
 const OTHER = 'acc_team_reset';
 const MEMBER_ROLE = `role_${(3).toString(16).padStart(16, '0')}`;
 const ME = `0x${'ab'.repeat(20)}`;

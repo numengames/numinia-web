@@ -168,6 +168,17 @@ import {
 } from './worlds-homes';
 
 /** One line of the seed, dated in days before today. */
+/**
+ * The seed's team account of a community: `acc_team_<community>`, except Numen Games, whose
+ * register `team` is its real till account (MIS-266), so the seed carries that id instead.
+ */
+const SEEDED_TEAM_OVERRIDES: Readonly<Record<string, string>> = {
+  'numen-games': 'acc_t_2e2dd18c880ba974da1512dc7cde2431',
+};
+function seededTeamOf(community: string): string {
+  return SEEDED_TEAM_OVERRIDES[community] ?? `acc_team_${community.replace(/-/g, '_')}`;
+}
+
 export interface SeedLine {
   readonly kind: LineKind;
   readonly daysAgo: number;
@@ -329,7 +340,7 @@ function birthRoles(community?: string): OrganizationRole[] {
  * community starts with none.
  */
 const SEEDED_TERMS: Readonly<Record<string, readonly PublishedCommunityTerms[]>> = {
-  acc_team_numen_games: [
+  acc_t_2e2dd18c880ba974da1512dc7cde2431: [
     {
       terms: {
         capa: 'comunidad',
@@ -656,7 +667,7 @@ function booksFor(seed: AccountsSeed, wallet: string, now: Date): Book[] {
       role: member.role,
       addedAt: new Date(dayStart(now, member.addedDaysAgo)).toISOString(),
     })),
-    roles: birthRoles(),
+    roles: birthRoles(Object.entries(SEEDED_TEAM_OVERRIDES).find(([, id]) => id === team.id)?.[0]),
     // A plain member holds the Team template's third role («Miembro») unless the seed says otherwise.
     held: new Map(
       team.members.map((member) => [
@@ -1018,7 +1029,7 @@ export function createAccountsFixtureDesk(
     house: boolean,
     community: string,
   ): Promise<Entry | DeskRefusal> => {
-    const seeded = `acc_team_${community.replace(/-/g, '_')}`;
+    const seeded = seededTeamOf(community);
     const book =
       communityBooks.get(await communityAccountId(community)) ??
       booksOf(who).find((candidate) => candidate.kind === 'team' && candidate.id === seeded);
@@ -1895,7 +1906,7 @@ export function createAccountsFixtureDesk(
     publicTerms: async (communityId): Promise<DeskPublicTermsAnswer> => {
       const community = readCommunityId(communityId);
       if (community === undefined) return refuse('communityId must be a community id');
-      const seeded = `acc_team_${community.replace(/-/g, '_')}`;
+      const seeded = seededTeamOf(community);
       // The organization the house opened for the community, else the seed's own (the seed's
       // per-wallet copies keep their drafts apart: nobody's draft is public).
       const book = communityBooks.get(await communityAccountId(community));

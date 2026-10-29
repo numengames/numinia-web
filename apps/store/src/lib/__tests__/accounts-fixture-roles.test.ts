@@ -147,7 +147,7 @@ describe('the fixture desk: roles', () => {
       problems(
         await plain.createRole(ME, TEAM, { name: 'x', color: null, hoist: false, permissions: [] }),
       ),
-    ).toEqual(['this needs manage-roles, which the owners hold, and the role Administración']);
+    ).toEqual(['this needs manage-roles, which the owners hold, and the role Oráculos']);
     // A holder of manage-roles only (no administrator) cannot hand out what they lack.
     const self = memberDesk([1]);
     const edited = roles(
@@ -285,7 +285,7 @@ describe('the fixture desk: roles', () => {
     expect(await d.log(ME, 'acc_personal')).toMatchObject({ ok: false });
     // A plain member of the organization is told who may.
     expect(problems(await memberDesk([3]).log(ME, TEAM))).toEqual([
-      'this needs view-organization-log, which the owners hold, and the role Administración',
+      'this needs view-organization-log, which the owners hold, and the role Oráculos',
     ]);
   });
 });
