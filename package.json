@@ -44,7 +44,7 @@
     "fflate": "^0.8.3",
     "knip": "^6.41.0",
     "license-checker-rseidelsohn": "^5.0.1",
-    "playwright": "^1.62.1",
+    "playwright": "^1.64.1",
     "prettier": "^3.9.10",
     "secretlint": "^13.0.7",
     "turbo": "^2.11.10",
