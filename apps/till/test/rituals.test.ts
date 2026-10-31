@@ -280,13 +280,17 @@ describe('listing encounters', () => {
     const s = scene();
     await run(s);
     await run(s, 'merge');
-    const late = ritualOf(await s.desk.createRitual(PABLO, { ...DRAFT, start: '2027-01-10' }));
+    // Dates are relative to today (UTC): a fixed calendar date turns «not over»
+    // into «over» the day after it, and the test goes red on every PR.
+    const inDays = (days: number) =>
+      new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+    const late = ritualOf(await s.desk.createRitual(PABLO, { ...DRAFT, start: inDays(60) }));
     const soon = ritualOf(
       await s.desk.createRitual(PABLO, {
         ...DRAFT,
         communityId: 'merge',
-        start: '2026-10-01',
-        end: '2026-10-30',
+        start: inDays(-30),
+        end: inDays(7),
       }),
     );
     const past = ritualOf(await s.desk.createRitual(PABLO, { ...DRAFT, start: '2020-01-01' }));
