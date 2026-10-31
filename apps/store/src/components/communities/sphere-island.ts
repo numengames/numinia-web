@@ -280,14 +280,29 @@ export function mountSphere(root: HTMLElement): void {
 
   // ---- the dots ----
   let pointerKind = 'mouse';
+  // A press on a dot focuses its link a few events AFTER the pointer went
+  // down. Turning the sphere at that focus would slide the dot from under
+  // the finger or the cursor before the click, and a click whose press and
+  // release landed on different elements never reaches the link: the tap
+  // is lost (it shows under reduced motion, where the turn is instant). A
+  // pressed dot is already where the pointer is; only the keyboard's focus
+  // brings it round.
+  let pressed = false;
   dots.forEach((dot, index) => {
     const link = dot.querySelector('a');
     if (!link) return;
-    link.addEventListener('focus', () => bring(index));
+    link.addEventListener('focus', () => {
+      if (!pressed) bring(index);
+    });
+    link.addEventListener('blur', () => {
+      pressed = false;
+    });
     link.addEventListener('pointerdown', (event) => {
       pointerKind = event.pointerType || 'mouse';
+      pressed = true;
     });
     link.addEventListener('click', (event) => {
+      pressed = false;
       const touch = pointerKind === 'touch' || pointerKind === 'pen';
       pointerKind = 'mouse';
       if (touch && !dot.classList.contains('nombrado')) {
