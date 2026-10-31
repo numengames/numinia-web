@@ -37,12 +37,12 @@ export interface CensusListMessages extends OrgChoiceMessages {
     readonly actions: string;
   };
   readonly copy: string;
-  /** «Copiar la cartera de {who}», for screen readers. */
+  /** «Copiar cartera: {who}», for screen readers: starts with the visible words (WCAG 2.5.3). */
   readonly copyLabel: string;
   readonly copied: string;
   readonly copyFailed: string;
   readonly add: string;
-  /** «Añadir a {who} a una organización», for screen readers. */
+  /** «Añadir a una organización: {who}», for screen readers: starts with the visible words (WCAG 2.5.3). */
   readonly addLabel: string;
   readonly dialogTitle: string;
   readonly orgLabel: string;
@@ -89,11 +89,11 @@ export const CENSUS_LIST_UI: Readonly<Record<SupportedLocale, CensusListMessages
       actions: 'Acciones',
     },
     copy: 'Copiar cartera',
-    copyLabel: 'Copiar la cartera de {who}',
+    copyLabel: 'Copiar cartera: {who}',
     copied: 'Cartera copiada.',
     copyFailed: 'No se ha podido copiar: {wallet}',
     add: 'Añadir a una organización',
-    addLabel: 'Añadir a {who} a una organización',
+    addLabel: 'Añadir a una organización: {who}',
     dialogTitle: 'Añadir a {who} a una organización',
     orgLabel: 'Organización',
     noOrgs: 'No hay organizaciones en las que entrar.',
@@ -132,11 +132,11 @@ export const CENSUS_LIST_UI: Readonly<Record<SupportedLocale, CensusListMessages
       actions: 'Actions',
     },
     copy: 'Copy wallet',
-    copyLabel: 'Copy the wallet of {who}',
+    copyLabel: 'Copy wallet: {who}',
     copied: 'Wallet copied.',
     copyFailed: 'Could not copy: {wallet}',
     add: 'Add to an organization',
-    addLabel: 'Add {who} to an organization',
+    addLabel: 'Add to an organization: {who}',
     dialogTitle: 'Add {who} to an organization',
     orgLabel: 'Organization',
     noOrgs: 'There are no organizations to enter.',
@@ -175,11 +175,11 @@ export const CENSUS_LIST_UI: Readonly<Record<SupportedLocale, CensusListMessages
       actions: '操作',
     },
     copy: 'ウォレットをコピー',
-    copyLabel: '{who}のウォレットをコピー',
+    copyLabel: 'ウォレットをコピー: {who}',
     copied: 'ウォレットをコピーしました。',
     copyFailed: 'コピーできませんでした：{wallet}',
     add: '組織に追加',
-    addLabel: '{who}を組織に追加',
+    addLabel: '組織に追加: {who}',
     dialogTitle: '{who}を組織に追加',
     orgLabel: '組織',
     noOrgs: '入れる組織がありません。',
@@ -218,11 +218,11 @@ export const CENSUS_LIST_UI: Readonly<Record<SupportedLocale, CensusListMessages
       actions: '작업',
     },
     copy: '지갑 복사',
-    copyLabel: '{who}의 지갑 복사',
+    copyLabel: '지갑 복사: {who}',
     copied: '지갑을 복사했습니다.',
     copyFailed: '복사하지 못했습니다: {wallet}',
     add: '조직에 추가',
-    addLabel: '{who}을(를) 조직에 추가',
+    addLabel: '조직에 추가: {who}',
     dialogTitle: '{who}을(를) 조직에 추가',
     orgLabel: '조직',
     noOrgs: '들어갈 수 있는 조직이 없습니다.',
@@ -261,11 +261,11 @@ export const CENSUS_LIST_UI: Readonly<Record<SupportedLocale, CensusListMessages
       actions: 'Ações',
     },
     copy: 'Copiar carteira',
-    copyLabel: 'Copiar a carteira de {who}',
+    copyLabel: 'Copiar carteira: {who}',
     copied: 'Carteira copiada.',
     copyFailed: 'Não foi possível copiar: {wallet}',
     add: 'Adicionar a uma organização',
-    addLabel: 'Adicionar {who} a uma organização',
+    addLabel: 'Adicionar a uma organização: {who}',
     dialogTitle: 'Adicionar {who} a uma organização',
     orgLabel: 'Organização',
     noOrgs: 'Não há organizações em que entrar.',

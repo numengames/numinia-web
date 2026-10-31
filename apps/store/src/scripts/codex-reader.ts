@@ -72,7 +72,11 @@ function initReader(codex: HTMLElement): void {
     const night = codex.classList.contains('nocturno');
     modeButton?.setAttribute('aria-pressed', String(night));
     const label = modeButton?.querySelector('.lbl');
-    if (label) label.textContent = night ? ui.day : ui.night;
+    const visible = night ? ui.day : ui.night;
+    if (label) label.textContent = visible;
+    // WCAG 2.5.3 (axe `label-content-name-mismatch`): the accessible name
+    // starts with the words the button shows, then says what it switches.
+    modeButton?.setAttribute('aria-label', `${visible}, ${ui.mode}`);
     codex
       .querySelector<SVGElement>('[data-ico-sol]')
       ?.style.setProperty('display', night ? 'none' : '');

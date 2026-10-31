@@ -21,6 +21,7 @@ import {
   sentenceStart,
   sentences,
   spokenWeight,
+  toggleName,
 } from '../speech-position';
 
 const TEXT =
@@ -87,6 +88,26 @@ describe('clock and duration', () => {
     expect(estimate(90, 1, 'min')).toBe('· <1 min');
     expect(estimate(1800, 1, 'min')).toBe('· ~10 min');
     expect(estimate(1800, 2, 'min')).toBe('· ~5 min');
+  });
+});
+
+describe('toggleName', () => {
+  it('keeps the phrase when no estimate is drawn and it opens with the label', () => {
+    expect(toggleName('Escuchar', '', 'Escuchar este capítulo')).toBe('Escuchar este capítulo');
+    expect(toggleName('Pausa', '', 'Pausar la lectura')).toBe('Pausar la lectura');
+  });
+  it('puts the label before the phrase when it does not open with it', () => {
+    expect(toggleName('再生', '', '章を聞く')).toBe('再生, 章を聞く');
+  });
+  it('shows the estimate right after the label and continues the phrase', () => {
+    expect(toggleName('Listen', '· <1 min', 'Listen to this chapter')).toBe(
+      'Listen · <1 min to this chapter',
+    );
+  });
+  it('does not splice into a longer word and falls back to label, estimate, phrase', () => {
+    expect(toggleName('Pausa', '· ~3 min', 'Pausar la lectura')).toBe(
+      'Pausa · ~3 min, Pausar la lectura',
+    );
   });
 });
 

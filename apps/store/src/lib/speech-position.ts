@@ -236,6 +236,22 @@ export function estimate(words: number, rate: number, min: string): string {
   return mins < 1 ? `· <1 ${min}` : `· ~${Math.round(mins)} ${min}`;
 }
 
+/**
+ * The Listen button's accessible name. WCAG 2.5.3 (axe
+ * `label-content-name-mismatch`): the name must contain the words the button
+ * SHOWS — the label and, when it is drawn, the estimate — in that order, so a
+ * voice-control user who says what they read hits it. When the phrase already
+ * opens with the label («Escuchar» → «Escuchar este capítulo») the rest of it
+ * follows the shown words instead of repeating them.
+ */
+export function toggleName(label: string, est: string, phrase: string): string {
+  if (est === '') return phrase.startsWith(label) ? phrase : `${label}, ${phrase}`;
+  const shown = `${label} ${est}`;
+  return phrase.startsWith(`${label} `)
+    ? shown + phrase.slice(label.length)
+    : `${shown}, ${phrase}`;
+}
+
 export interface SavedPosition {
   index: number;
   offset: number;
