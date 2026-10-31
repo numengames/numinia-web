@@ -704,8 +704,10 @@ test.describe('Agentes — «En el mundo»: body and bubble (S21)', () => {
       .toMatchObject({
         presence: { burbuja: { radio: 5 } },
       });
-    // the card disables its controls while a change is on its way: the keyboard keeps its place
+    // the card disables its controls while a change is on its way: the keyboard keeps its place,
+    // but a key pressed while the card is still disabled is lost, so wait for it to open again
     await expect(slider).toBeFocused();
+    await expect(slider).toBeEnabled();
     await page.keyboard.press('ArrowRight');
     await expect(hermes.locator('.agentes-radio-valor')).toHaveText('6 m');
     // the 6 must be on its way back before the next move: a fill into the disabled card is lost
@@ -1104,7 +1106,11 @@ test.describe('Agentes — changing one', () => {
     const stand = await stage(page);
     await open(page);
     const hermes = row(page, 'hermes');
-    await hermes.getByRole('radio', { name: /Dormida/ }).click();
+    // The radio itself is a 1px, transparent input that sits under the moon
+    // icon of its label; a person clicks the label, and so does the test.
+    // (Playwright 1.64 reports that <svg> as intercepting the input's click
+    // and retries until the test times out.)
+    await hermes.locator('[data-agent-state-option="dormida"]').click();
     await expect(hermes.getByRole('radio', { name: /Dormida/ })).toBeChecked();
     await expect(hermes.locator('[data-agent-status-line]')).toContainText('en reposo');
     expect(stand.calls.at(-1)?.body).toEqual({

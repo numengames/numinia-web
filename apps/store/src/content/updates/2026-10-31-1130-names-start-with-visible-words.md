@@ -1,0 +1,2 @@
+- FIX — The manual's Night/Day button, the Listen button and the census «Add to an organization» and «Copy wallet» buttons now start their screen-reader names with the words they show (WCAG 2.5.3).
+- FIX — On a touch screen with reduced motion, the first tap on a dot of the house sphere now names it instead of being lost when the sphere turned under the finger.

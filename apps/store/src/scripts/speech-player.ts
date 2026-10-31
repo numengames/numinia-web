@@ -38,6 +38,7 @@ import {
   sentenceStart,
   sentences,
   spokenWeight,
+  toggleName,
   type Section,
 } from '../lib/speech-position';
 
@@ -257,8 +258,18 @@ function initPlayer(root: HTMLElement): void {
       /* private mode: the speed lives for this page only */
     }
   };
+  // The toggle's accessible name carries the words it shows (WCAG 2.5.3), the
+  // estimate included: whoever changes either re-names it.
+  let togglePhrase = T('ListenAria', 'Listen to this chapter');
+  const nameToggle = (): void => {
+    toggle.setAttribute(
+      'aria-label',
+      toggleName(label.textContent ?? '', est.hidden ? '' : (est.textContent ?? ''), togglePhrase),
+    );
+  };
   const renderEst = (): void => {
     est.textContent = estimate(words, rate, T('Min', 'min'));
+    nameToggle();
   };
   renderEst();
 
@@ -794,15 +805,14 @@ function initPlayer(root: HTMLElement): void {
         : resumable
           ? T('Resume', 'Resume')
           : T('Listen', 'Listen');
-    toggle.setAttribute(
-      'aria-label',
+    togglePhrase =
       state === 'speaking'
         ? T('PauseAria', 'Pause listening')
         : resumable
           ? T('ResumeAria', 'Resume listening')
-          : T('ListenAria', 'Listen to this chapter'),
-    );
+          : T('ListenAria', 'Listen to this chapter');
     est.hidden = on;
+    nameToggle();
     playBtn.classList.toggle('is-playing', state === 'speaking');
     playBtn.setAttribute(
       'aria-label',

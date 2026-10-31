@@ -11,6 +11,7 @@ export interface CodexClientUi {
   readonly bookmarked: string;
   readonly day: string;
   readonly night: string;
+  readonly mode: string;
   readonly phases: readonly string[];
 }
 
@@ -19,6 +20,7 @@ const SPANISH: CodexClientUi = {
   bookmarked: 'Marcado',
   day: 'Diurno',
   night: 'Nocturno',
+  mode: 'Modo del manual',
   phases: [
     'luna nueva',
     'creciente',

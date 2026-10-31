@@ -122,7 +122,10 @@ test('both modes flip every surface token', async ({ page }) => {
   await page.evaluate(() => {
     document.documentElement.dataset['modo'] = 'nocturno';
   });
-  expect(await read()).not.toBe(diurno);
+  // Reduced motion shrinks every transition to a microsecond, not to none, so
+  // Firefox and WebKit report the new colour on the next style tick rather
+  // than inside the same task as the attribute write: wait for it.
+  await expect.poll(read).not.toBe(diurno);
 });
 
 test('content survives with JavaScript disabled (SSG promise)', async ({ browser }) => {
@@ -268,7 +271,9 @@ test('Listen reads the chapter aloud: the dock, the speed, pause and stop', asyn
   await gotoFirstChapter(page);
   const listen = page.locator('.codex .chrome .sp-toggle');
   await expect(listen).toBeVisible();
-  await expect(listen).toHaveAttribute('aria-label', 'Escuchar este capítulo');
+  // The name opens with the words the button shows — «Escuchar · ~N min» —
+  // and goes on to say what it reads (WCAG 2.5.3).
+  await expect(listen).toHaveAttribute('aria-label', /^Escuchar · (<1|~\d+) min este capítulo$/);
   await listen.click();
   await expect(listen).toHaveAttribute('aria-pressed', 'true');
   // The dock surfaces, names the chapter and keeps the clock.
