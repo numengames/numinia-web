@@ -42,7 +42,7 @@
     "esbuild": "^0.28.2",
     "eslint": "^10.13.0",
     "fflate": "^0.8.3",
-    "knip": "^6.41.0",
+    "knip": "^6.43.0",
     "license-checker-rseidelsohn": "^5.0.1",
     "playwright": "^1.62.1",
     "prettier": "^3.9.10",
