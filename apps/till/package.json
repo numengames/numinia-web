@@ -14,10 +14,10 @@
   },
   "dependencies": {
     "@numinia/domain": "*",
-    "viem": "^2.57.11"
+    "viem": "^2.57.12"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20261025.1",
+    "@cloudflare/workers-types": "^5.20261027.1",
     "@types/node": "^26.6.5",
     "@vitest/coverage-v8": "^5.0.5",
     "vitest": "^5.0.1"
