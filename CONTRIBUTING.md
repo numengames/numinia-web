@@ -10,7 +10,7 @@ this code:
    `apps/store/src/lib/updates.ts` and raises the version — CI refuses the
    merge otherwise.
 3. Run `npm run verify` before pushing; the gates that bite are listed in
-   [`CLAUDE.md`](CLAUDE.md).
+   [`AGENTS.md`](AGENTS.md).
 4. English in code, comments and commits. Conventional commits
    (`feat:`, `fix:`, `docs:`, `chore:`…).
 5. Domain names come from the archive (`CAN-003`, `CAN-004` in
