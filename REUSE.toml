@@ -4,9 +4,9 @@
 # header (Phase C) override its directory default.
 
 version = 1
-SPDX-PackageName = "numinia-web"
+SPDX-PackageName = "numinia-platform"
 SPDX-PackageSupplier = "Numen Games S.L."
-SPDX-PackageDownloadLocation = "https://github.com/numengames/numinia-web"
+SPDX-PackageDownloadLocation = "https://github.com/numengames/numinia-platform"
 
 # ── Default: root configs, scripts, CI, infra ────────────────────────────────
 [[annotations]]

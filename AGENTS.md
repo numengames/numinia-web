@@ -1,0 +1,74 @@
+# AGENTS.md — numinia-platform
+
+This repository serves **numinia.com**, the game's site. The rules, the
+vocabulary and the architecture of Numen Games live in one place,
+`numengames/numinia-archive` (numinia.org): read its `AGENTS.md` first,
+transition regime included. This file only says what is specific here.
+
+Thread handoff skill for numinia.com: `numinia-organizations-platform` (its «Where we left off» section holds the thread's current state).
+
+## What this is
+
+A Turborepo monorepo. `apps/store` is the site in production at
+numinia.com (the folder keeps the name of the legacy numinia.store line;
+renaming it is a pending cut). `apps/com` is an empty skeleton. `apps/till`
+is the till (ADR-070): a Worker of its own with its own D1 database — the
+prepaid ledger and the nightly close (MIS-177, MIS-178). `apps/mcp` is
+the relay: a Worker of its own at `mcp.numinia.com`, the remote MCP server
+for an organization's AI and its OAuth 2.1 authorization server. Shared
+packages: `packages/domain` (the game's types, constants in five locales,
+Zod validators — 100 % coverage per file), `analytics`, `auth`, `state`,
+`ui`. `features/` holds Gherkin acceptance criteria run against the built
+output.
+
+The digital goods the site shows come from the data repository
+(`GITHUB_REPO_OWNER`/`GITHUB_REPO_NAME`, CC0); the Codex reads the manual
+from `numinia-nwos/lore/` at build (`npm run lore:fetch`).
+
+## Commands
+
+```bash
+npm ci
+npm run ci                     # turbo: type-check → lint → test → build
+npm run test:acceptance        # Gherkin (Cucumber)
+npm run verify                 # everything CI runs, in order
+cd apps/store && npm run dev   # :4321, needs .env — see .env.example
+```
+
+Build with the env block from `.github/workflows/ci.yml` (`DATA_SOURCE=fixture`
+keeps it hermetic). Env vars reach the build only if listed in `turbo.json`
+`globalEnv`.
+
+## Gates that bite (beyond a green `test`)
+
+- `scripts/check-version-bump.mjs`: any change under `apps/store/src/**`
+  needs ONE new note file in `apps/store/src/content/updates/`, named
+  `YYYY-MM-DD-HHMM-slug.md` (UTC), with lines `- NEW|FIX|UPD — text` and an
+  optional `missions: MIS-123` front matter. Nobody writes a version: the Nth
+  file by name is the Nth release after the frozen table in `updates.ts`
+  (v0.171.0), so PR titles and tests carry no version number. A note may not
+  be deleted, and a new one must sort after every note on `main` (a stale
+  branch renames its file to a later time).
+- Per-file coverage on every `src/lib/*.ts`: 100 % lines/functions/
+  statements, 95 % branches. A new lib file needs its test.
+- `scripts/link-check.mjs` crawls `apps/store/dist/client`: no internal
+  href without a built file.
+- `scripts/license-guard.mjs`: the ConsenSys-licensed MetaMask SDK may sit
+  in `node_modules` (transitive via thirdweb) but must never reach `dist/`;
+  the guard reads the bundler's module manifest, not comment strings.
+- REUSE lint: every file declares its regime (`REUSE.toml` is the map).
+- Playwright visual gate (`apps/store/e2e/visual.spec.ts`): full-page
+  baselines — any chrome change needs regenerated PNGs inside the CI image.
+
+## Deploy
+
+Cloudflare Workers Builds on push to `main`; the build command lives in
+`wrangler.jsonc` (`build.command`), the panel field stays empty. Verify a
+publication with `numinia.com/version.json` against the `main` SHA.
+
+## Conventions kept here
+
+English in code and comments; strict TypeScript, no `any`, no `console.*`
+(lint fails); named exports; every interactive element carries
+`data-metric` (taxonomy in `packages/analytics/src/events.ts`); 3D always
+lazy-loaded; no asset binaries in git; env validated with Zod, fail closed.

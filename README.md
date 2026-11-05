@@ -1,4 +1,4 @@
-# numinia-web
+# numinia-platform
 
 The site of the game: **[numinia.com](https://numinia.com)** — the city, the
 CC0 catalogue of digital goods, the Codex, and the citizen's platform.
@@ -24,7 +24,7 @@ npm run ci                     # type-check → lint → test → build
 cd apps/store && npm run dev   # http://localhost:4321 — needs .env, see .env.example
 ```
 
-What CI runs, and the gates that are not obvious, are in [`CLAUDE.md`](CLAUDE.md).
+What CI runs, and the gates that are not obvious, are in [`AGENTS.md`](AGENTS.md).
 
 ## Licences
 
