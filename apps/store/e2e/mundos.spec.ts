@@ -12,6 +12,7 @@
 
 import AxeBuilder from '@axe-core/playwright';
 import { createHash, randomBytes } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
@@ -574,6 +575,55 @@ test.describe('each machine’s recipe, as the machine says', () => {
       expect(line).not.toContain('FLEET_REF');
       expect(line).toContain('/numinia-assets/main/');
     }
+  });
+});
+
+test.describe('pressing a machine opens its card', () => {
+  test('each machine is a button; its card counts the worlds the fleet lists on it', async ({
+    page,
+    context,
+  }) => {
+    await signIn(context, HOUSE, 'oracle');
+    await page.goto(room());
+    const machine = (alias: string) => page.locator(`[data-machine="${alias}"]`);
+    // Every machine, open or not, has a button; no card until one is pressed.
+    for (const alias of ['open-1', 'open-2', 'bronte-xs-ca-003', 'open-3']) {
+      await expect(machine(alias).locator('.boton-maquina')).toHaveAttribute(
+        'aria-expanded',
+        'false',
+      );
+    }
+    await expect(page.locator('[data-ficha]')).toHaveCount(0);
+    // The number is the fixture's own: the worlds its door lists, none of them being deleted.
+    const fleet = JSON.parse(
+      readFileSync(
+        fileURLToPath(new URL('../fixtures/worlds/fleet.json', import.meta.url)),
+        'utf8',
+      ),
+    ) as { machines: { alias: string; worlds?: { phase: string }[] }[] };
+    const listed = (alias: string) =>
+      (fleet.machines.find((m) => m.alias === alias)?.worlds ?? []).filter(
+        (w) => w.phase !== 'deleting',
+      ).length;
+    await machine('open-1').locator('.boton-maquina').click();
+    await expect(machine('open-1').locator('.boton-maquina')).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    await expect(machine('open-1').locator('[data-ficha-worlds]')).toHaveText(
+      String(listed('open-1')),
+    );
+    // Capacity and MB are not invented: the card says they wait for the machine.
+    await expect(machine('open-1').locator('[data-ficha]')).toContainText('Capacidad y MB');
+    // What the machine already showed is still there.
+    await expect(machine('open-1')).toContainText('Se actualiza sola · al día.');
+    // A machine that does not answer cannot be counted: a dash, and the reason.
+    await machine('open-3').locator('.boton-maquina').click();
+    await expect(machine('open-3').locator('[data-ficha]')).toContainText('no responde');
+    await expect(machine('open-3').locator('[data-ficha-worlds]')).toHaveCount(0);
+    // One card at a time; pressing the machine again closes it.
+    await machine('open-3').locator('.boton-maquina').click();
+    await expect(page.locator('[data-ficha]')).toHaveCount(0);
   });
 });
 

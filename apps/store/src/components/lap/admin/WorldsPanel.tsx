@@ -474,11 +474,25 @@ function RecipeLine({
 }
 
 function Machines({ fleet, room }: { readonly fleet: Fleet; readonly room: WorldsRoomMessages }) {
+  // The machine whose card is open; pressing it again closes the card.
+  const [selected, setSelected] = useState<string | null>(null);
   return (
     <section className="maquinas" aria-label={room.machines.title}>
       <h2 className="etiqueta">{room.machines.title}</h2>
       <ul>
         {fleet.machines.map((machine) => {
+          const cardId = `ficha-${machine.alias}`;
+          const pressable = {
+            type: 'button' as const,
+            className: 'boton-maquina',
+            'aria-expanded': selected === machine.alias,
+            'aria-controls': cardId,
+            onClick: () => setSelected(selected === machine.alias ? null : machine.alias),
+          };
+          // The worlds the fleet lists on this machine (those being deleted are not listed).
+          const placed = listedRows(fleet.rows).filter(
+            (row) => rowPlace(row)?.server === machine.alias,
+          ).length;
           const health = machineHealth(machine.heartbeat);
           const line = machine.open ? healthLine(machine.alias, health, room) : null;
           // What its recipe updater says: the room hands out no recipe and compares with none.
@@ -502,8 +516,10 @@ function Machines({ fleet, room }: { readonly fleet: Fleet; readonly room: World
             >
               {machine.open ? (
                 <>
-                  <span className="punto-maquina" aria-hidden="true" />
-                  <span>{fill(room.machines.open, { m: machine.alias })}</span>
+                  <button {...pressable}>
+                    <span className="punto-maquina" aria-hidden="true" />
+                    <span>{fill(room.machines.open, { m: machine.alias })}</span>
+                  </button>
                   {typeof machine.recipe === 'string' && (
                     <span className="mono receta" title={machine.recipe}>
                       {fill(room.machines.recipe, { r: shortSha(machine.recipe) })}
@@ -550,8 +566,10 @@ function Machines({ fleet, room }: { readonly fleet: Fleet; readonly room: World
               ) : (
                 <div className="maquina-cerrada">
                   <p>
-                    <span className="punto-maquina" aria-hidden="true" />{' '}
-                    {fill(room.machines.closed, { m: machine.alias, why: machine.reason ?? '?' })}
+                    <button {...pressable}>
+                      <span className="punto-maquina" aria-hidden="true" />{' '}
+                      {fill(room.machines.closed, { m: machine.alias, why: machine.reason ?? '?' })}
+                    </button>
                   </p>
                   {fleet.wallet !== null && (
                     <>
@@ -559,6 +577,20 @@ function Machines({ fleet, room }: { readonly fleet: Fleet; readonly room: World
                       <CopyLine line={bootstrapLine(machine.alias, fleet.wallet)} room={room} />
                     </>
                   )}
+                </div>
+              )}
+              {selected === machine.alias && (
+                <div className="ficha-maquina" id={cardId} data-ficha={machine.alias}>
+                  <dl>
+                    <dt>{room.machines.card.worlds}</dt>
+                    {/* Counted from the fleet's own list; a closed machine's list is not known. */}
+                    <dd data-ficha-worlds={machine.open ? placed : undefined}>
+                      {machine.open ? placed : '—'}
+                    </dd>
+                  </dl>
+                  <p className="nota">
+                    {machine.open ? room.machines.card.pending : room.machines.card.unknown}
+                  </p>
                 </div>
               )}
             </li>

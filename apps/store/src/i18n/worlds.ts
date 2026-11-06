@@ -156,6 +156,14 @@ export interface WorldsRoomMessages {
     readonly freeing: string;
     /** The engines its door says it runs: `{e}`. */
     readonly engines: string;
+    /** The card a machine opens when pressed. */
+    readonly card: {
+      readonly worlds: string;
+      /** A closed machine: its worlds cannot be counted. */
+      readonly unknown: string;
+      /** Capacity and MB used: the machine's door gives neither yet. */
+      readonly pending: string;
+    };
   };
   /** The fleet's engine banner above the machines. */
   readonly fleetEngine: {
@@ -691,6 +699,11 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       waiting: 'Peticiones en espera: {n}.',
       freeing: 'Borrando {d}…',
       engines: 'motores: {e}',
+      card: {
+        worlds: 'Mundos',
+        unknown: 'Esta máquina no responde: no se sabe cuántos mundos tiene.',
+        pending: 'Capacidad y MB gastados: se mostrarán cuando la máquina los dé.',
+      },
     },
     fleetEngine: {
       title: 'Motor de la flota',
@@ -1250,6 +1263,11 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       waiting: 'Requests waiting: {n}.',
       freeing: 'Deleting {d}…',
       engines: 'engines: {e}',
+      card: {
+        worlds: 'Worlds',
+        unknown: 'This machine is not answering: how many worlds it holds is not known.',
+        pending: 'Capacity and MB used: shown once the machine reports them.',
+      },
     },
     fleetEngine: {
       title: 'Fleet engine',
@@ -1814,6 +1832,11 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       waiting: '待機中のリクエスト：{n}。',
       freeing: '{d} を削除中…',
       engines: 'エンジン：{e}',
+      card: {
+        worlds: 'ワールド',
+        unknown: 'このマシンは応答していません。ワールド数は不明です。',
+        pending: '容量と使用 MB：マシンが報告し次第、表示します。',
+      },
     },
     fleetEngine: {
       title: 'フリートのエンジン',
@@ -2378,6 +2401,11 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       waiting: '대기 중인 요청: {n}.',
       freeing: '{d} 삭제 중…',
       engines: '엔진: {e}',
+      card: {
+        worlds: '월드',
+        unknown: '이 머신이 응답하지 않아 월드 수를 알 수 없습니다.',
+        pending: '용량과 사용한 MB: 머신이 알려 주면 표시됩니다.',
+      },
     },
     fleetEngine: {
       title: '플릿 엔진',
@@ -2936,6 +2964,11 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       waiting: 'Pedidos em espera: {n}.',
       freeing: 'Apagando {d}…',
       engines: 'motores: {e}',
+      card: {
+        worlds: 'Mundos',
+        unknown: 'Esta máquina não responde: não se sabe quantos mundos ela tem.',
+        pending: 'Capacidade e MB gastos: aparecem quando a máquina os informar.',
+      },
     },
     fleetEngine: {
       title: 'Motor da frota',

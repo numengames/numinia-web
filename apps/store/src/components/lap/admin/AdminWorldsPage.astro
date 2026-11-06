@@ -674,6 +674,30 @@ const covers = Object.fromEntries(
   [data-worlds-panel] .maquina-cerrada p {
     margin: 0;
   }
+  /* The card a pressed machine opens: its worlds; capacity and MB wait for the machine's door */
+  [data-worlds-panel] .ficha-maquina {
+    flex-basis: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+    padding: var(--s3);
+    border: 1px solid var(--borde, currentColor);
+    border-radius: 8px;
+  }
+  [data-worlds-panel] .ficha-maquina dl {
+    display: flex;
+    align-items: baseline;
+    gap: var(--s3);
+    margin: 0;
+  }
+  [data-worlds-panel] .ficha-maquina dd {
+    margin: 0;
+    font-size: 1.4rem;
+    font-variant-numeric: tabular-nums;
+  }
+  [data-worlds-panel] .ficha-maquina p {
+    margin: 0;
+  }
   /* The recipe a machine was installed from, and what its updater says; the last line for one that does not update itself */
   [data-worlds-panel] .receta-estado[data-tono='bien'],
   [data-worlds-panel] .receta-canario {
